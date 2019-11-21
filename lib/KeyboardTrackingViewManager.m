@@ -128,35 +128,6 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
     return subview;
 }
 
--(void)_swizzleWebViewInputAccessory:(UIWebView*)webview
-{
-    UIView* subview;
-    for (UIView* view in webview.scrollView.subviews)
-    {
-        if([[view.class description] hasPrefix:@"UIWeb"])
-        {
-            subview = view;
-        }
-    }
-    
-    if(_newClass == nil)
-    {
-        NSString* name = [NSString stringWithFormat:@"%@_Tracking_%p", subview.class, self];
-        _newClass = NSClassFromString(name);
-        
-        _newClass = objc_allocateClassPair(subview.class, [name cStringUsingEncoding:NSASCIIStringEncoding], 0);
-        if(!_newClass) return;
-        
-        Method method = class_getInstanceMethod([UIResponder class], @selector(inputAccessoryView));
-        class_addMethod(_newClass, @selector(inputAccessoryView), imp_implementationWithBlock(^(id _self){return _observingInputAccessoryView;}), method_getTypeEncoding(method));
-        
-        objc_registerClassPair(_newClass);
-    }
-    
-    object_setClass(subview, _newClass);
-    [subview reloadInputViews];
-}
-
 -(void)layoutSubviews
 {
     [super layoutSubviews];
@@ -234,10 +205,6 @@ typedef NS_ENUM(NSUInteger, KeyboardTrackingScrollBehavior) {
         else if ([subview isKindOfClass:NSClassFromString(@"RCTUITextView")] && [subview isKindOfClass:[UITextView class]])
         {
             [self setupTextView:(UITextView*)subview];
-        }
-        else if ([subview isKindOfClass:[UIWebView class]])
-        {
-            [self _swizzleWebViewInputAccessory:(UIWebView*)subview];
         }
     }
     
